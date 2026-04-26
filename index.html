@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeoTools Pro — منصة أدوات GIS</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --card: #111827;
+  --card2: #1a2235;
+  --accent: #00e5a0;
+  --accent2: #00b4d8;
+  --accent-dim: rgba(0,229,160,0.15);
+  --text: #f0f4f8;
+  --text2: #8899aa;
+  --text3: #556677;
+  --border: rgba(255,255,255,0.06);
+  --danger: #ef4444;
+  --warn: #f59e0b;
+  --info: #3b82f6;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'IBM Plex Sans Arabic','Tajawal',sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  line-height: 1.7;
+}
+
+::-webkit-scrollbar { width:6px }
+::-webkit-scrollbar-track { background:var(--bg) }
+::-webkit-scrollbar-thumb { background:var(--accent); border-radius:3px }
+
+/* ===== NAV ===== */
+nav {
+  position:fixed; top:0; width:100%; z-index:1000;
+  padding:12px 24px; display:flex; justify-content:space-between; align-items:center;
+  background:rgba(10,14,26,0.92); backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.logo { display:flex; align-items:center; gap:10px; cursor:pointer; text-decoration:none }
+.logo-icon {
+  width:38px; height:38px; background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:10px; display:flex; align-items:center; justify-content:center;
+  font-size:16px; font-weight:900; color:var(--bg);
+}
+.logo-text { font-family:'Tajawal'; font-size:20px; font-weight:800; color:var(--text) }
+.logo-text span { color:var(--accent) }
+
+.nav-links { display:flex; gap:6px; align-items:center; list-style:none }
+.nav-btn {
+  background:transparent; border:none; color:var(--text2); cursor:pointer;
+  font-family:inherit; font-size:14px; font-weight:600; padding:8px 16px;
+  border-radius:8px; transition:all 0.3s;
+}
+.nav-btn:hover,.nav-btn.active { color:var(--accent); background:var(--accent-dim) }
+.nav-badge {
+  background:rgba(0,229,160,0.15); color:var(--accent); padding:4px 12px;
+  border-radius:8px; font-size:12px; font-weight:700;
+}
+
+/* ===== PAGES ===== */
+.page { display:none; padding-top:70px; min-height:100vh }
+.page.active { display:block }
+
+/* ===== HERO ===== */
+.hero {
+  min-height:85vh; display:flex; align-items:center; justify-content:center;
+  text-align:center; padding:60px 20px; position:relative; overflow:hidden;
+}
+.hero-bg {
+  position:absolute; inset:0;
+  background: radial-gradient(ellipse at 30% 20%, rgba(0,229,160,0.07) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 80%, rgba(0,180,216,0.04) 0%, transparent 50%);
+}
+.hero-grid {
+  position:absolute; inset:0;
+  background-image: linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+                     linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+  background-size:60px 60px;
+  -webkit-mask-image:radial-gradient(ellipse at center, black 30%, transparent 70%);
+}
+.hero-content { position:relative; z-index:1; max-width:750px }
+.hero-badge {
+  display:inline-flex; align-items:center; gap:8px;
+  background:var(--accent-dim); border:1px solid rgba(0,229,160,0.2);
+  padding:8px 18px; border-radius:50px; font-size:14px; color:var(--accent); font-weight:600; margin-bottom:28px;
+}
+.hero-badge .dot { width:8px; height:8px; background:var(--accent); border-radius:50%; animation:pulse 2s infinite }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.hero h1 { font-family:'Tajawal'; font-size:clamp(2.2rem,5vw,3.8rem); font-weight:900; line-height:1.2; margin-bottom:20px }
+.gradient-text { background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent }
+.hero p { font-size:18px; color:var(--text2); max-width:550px; margin:0 auto 30px }
+
+.hero-btns { display:flex; gap:14px; justify-content:center; flex-wrap:wrap }
+
+/* ===== BUTTONS ===== */
+.btn-primary {
+  background:linear-gradient(135deg,var(--accent),var(--accent2)); color:var(--bg);
+  padding:14px 32px; border-radius:12px; font-weight:700; font-size:16px;
+  border:none; cursor:pointer; font-family:inherit;
+  box-shadow:0 4px 25px var(--accent-dim); transition:all 0.3s;
+}
+.btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 35px rgba(0,229,160,0.3) }
+
+.btn-secondary {
+  background:transparent; color:var(--text); padding:14px 32px;
+  border-radius:12px; font-weight:600; font-size:16px;
+  border:1px solid rgba(255,255,255,0.15); cursor:pointer; font-family:inherit; transition:all 0.3s;
+}
+.btn-secondary:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim) }
+
+.btn-sm {
+  background:var(--card); border:1px solid var(--border); color:var(--text2);
+  padding:8px 16px; border-radius:10px; cursor:pointer; font-family:inherit;
+  font-size:13px; font-weight:500; transition:all 0.3s;
+}
+.btn-sm:hover { border-color:var(--accent); color:var(--accent) }
+
+.btn-tool {
+  padding:10px 20px; border-radius:10px; border:1px solid var(--border);
+  background:transparent; color:var(--text3); cursor:pointer; font-family:inherit;
+  font-size:14px; font-weight:600; transition:all 0.3s;
+}
+.btn-tool.active,.btn-tool:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim) }
+
+/* ===== CONTAINER ===== */
+.container { max-width:1200px; margin:0 auto; padding:30px 24px }
+
+/* ===== UPLOAD ===== */
+.upload-zone {
+  background:var(--card); border:2px dashed rgba(0,229,160,0.25); border-radius:20px;
+  padding:60px 30px; text-align:center; cursor:pointer; transition:all 0.3s;
+  margin-bottom:20px;
+}
+.upload-zone:hover,.upload-zone.dragover { border-color:var(--accent); background:rgba(0,229,160,0.03) }
+.upload-zone .icon { font-size:50px; margin-bottom:14px; opacity:0.5 }
+.upload-zone h3 { font-family:'Tajawal'; font-size:18px; font-weight:700; margin-bottom:8px }
+.upload-zone p { color:var(--text2); margin-bottom:16px }
+.formats { display:flex; gap:8px; justify-content:center; flex-wrap:wrap }
+.format-chip { background:rgba(255,255,255,0.05); color:var(--text3); padding:4px 12px; border-radius:6px; font-size:13px }
+
+/* ===== LAYERS PANEL ===== */
+.layers-panel {
+  background:var(--card); border:1px solid var(--border); border-radius:16px;
+  padding:20px; margin-bottom:20px;
+}
+.layers-panel h3 { font-family:'Tajawal'; font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px }
+.layer-item {
+  display:flex; align-items:center; gap:12px; padding:12px 16px;
+  border-radius:10px; cursor:pointer; transition:all 0.3s; margin-bottom:4px;
+}
+.layer-item:hover { background:var(--card2) }
+.layer-item.active { background:var(--accent-dim); border:1px solid rgba(0,229,160,0.2) }
+.layer-icon {
+  width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+  font-size:16px;
+}
+.layer-icon.polygon { background:rgba(0,229,160,0.15); color:var(--accent) }
+.layer-icon.line { background:rgba(0,180,216,0.15); color:var(--accent2) }
+.layer-icon.point { background:rgba(245,158,11,0.15); color:var(--warn) }
+.layer-name { font-weight:600; font-size:14px }
+.layer-meta { font-size:12px; color:var(--text3) }
+
+/* ===== MAP ===== */
+#map {
+  width:100%; height:500px; border-radius:16px; border:1px solid var(--border);
+  overflow:hidden; background:var(--card);
+}
+.map-toolbar { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap }
+
+/* ===== TOOLS ===== */
+.tools-grid {
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px;
+}
+.tool-card {
+  background:var(--card); border:1px solid var(--border); border-radius:16px;
+  padding:24px; cursor:pointer; transition:all 0.3s; border-top:3px solid transparent;
+}
+.tool-card:hover { border-top-color:var(--accent); transform:translateY(-4px); border-color:rgba(0,229,160,0.15) }
+.tool-card .icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:14px; background:var(--accent-dim) }
+.tool-card h3 { font-family:'Tajawal'; font-size:16px; font-weight:700; margin-bottom:6px }
+.tool-card p { color:var(--text2); font-size:13px; line-height:1.7 }
+.tool-tag { display:inline-block; margin-top:12px; padding:4px 12px; background:rgba(0,229,160,0.08); color:var(--accent); font-size:12px; font-weight:600; border-radius:6px }
+
+/* ===== RESULTS ===== */
+.result-cards { display:flex; gap:12px; flex-wrap:wrap; margin:20px 0 }
+.result-card {
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  padding:12px 20px; text-align:center; min-width:90px;
+}
+.result-card .num { font-size:24px; font-weight:900 }
+.result-card .label { font-size:12px; color:var(--text3) }
+
+.table-wrap { max-height:350px; overflow:auto; border-radius:12px; border:1px solid var(--border) }
+table { width:100%; border-collapse:collapse; font-size:13px }
+th { padding:10px 14px; text-align:right; color:var(--text3); border-bottom:1px solid var(--border); background:var(--card); position:sticky; top:0; z-index:2 }
+td { padding:8px 14px; color:var(--text2); border-bottom:1px solid var(--border) }
+tr:nth-child(even) { background:rgba(255,255,255,0.015) }
+
+.severity { padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600 }
+.severity.high { background:rgba(239,68,68,0.15); color:#ef4444 }
+.severity.medium { background:rgba(245,158,11,0.15); color:#f59e0b }
+.severity.low { background:rgba(59,130,246,0.15); color:#3b82f6 }
+
+/* ===== BAR CHART ===== */
+.bar-row { display:flex; align-items:center; gap:12px; margin-bottom:8px }
+.bar-label { width:80px; font-size:13px; color:var(--text2); text-align:left; flex-shrink:0 }
+.bar-track { flex:1; height:28px; background:rgba(255,255,255,0.03); border-radius:8px; overflow:hidden; position:relative }
+.bar-fill { height:100%; border-radius:8px; transition:width 0.8s ease }
+.bar-val { position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:12px; font-weight:700 }
+
+/* ===== NOTIFICATION ===== */
+.notification {
+  position:fixed; top:80px; left:50%; transform:translateX(-50%); z-index:2000;
+  padding:12px 24px; border-radius:12px; font-size:14px; font-weight:600;
+  backdrop-filter:blur(10px); animation:slideDown 0.3s ease;
+}
+.notification.success { background:rgba(0,229,160,0.15); border:1px solid var(--accent); color:var(--accent) }
+.notification.error { background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#fca5a5 }
+@keyframes slideDown { from{opacity:0;transform:translate(-50%,-10px)} to{opacity:1;transform:translate(-50%,0)} }
+
+/* ===== PROGRESS ===== */
+.progress-bar { width:100%; height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden; margin:16px 0 }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:3px; transition:width 0.3s; animation:shimmer 1.5s infinite }
+@keyframes shimmer { 0%{opacity:0.8} 50%{opacity:1} 100%{opacity:0.8} }
+
+/* ===== LOADING ===== */
+.spinner { display:inline-block; width:20px; height:20px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; margin-left:8px }
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* ===== SECTION ===== */
+.section-header { text-align:center; margin-bottom:40px }
+.section-tag { color:var(--accent); font-size:13px; font-weight:700; letter-spacing:2px; margin-bottom:8px }
+.section-title { font-family:'Tajawal'; font-size:clamp(1.6rem,3vw,2.4rem); font-weight:800 }
+.section-desc { color:var(--text2); font-size:16px; max-width:600px; margin:8px auto 0 }
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px) {
+  .nav-links { display:none }
+  #map { height:350px }
+  .tools-grid { grid-template-columns:1fr }
+  .hero h1 { font-size:2rem }
+}
+</style>
+</head>
+<body>
+
+<!-- Notification -->
+<div id="notification" class="notification" style="display:none"></div>
+
+<!-- Nav -->
+<nav>
+  <a class="logo" onclick="showPage('home')">
+    <div class="logo-icon">G</div>
+    <div class="logo-text">Geo<span>Tools</span></div>
+  </a>
+  <ul class="nav-links">
+    <li><button class="nav-btn active" data-page="home" onclick="showPage('home')">الرئيسية</button></li>
+    <li><button class="nav-btn" data-page="viewer" onclick="showPage('viewer')">عارض الخرائط</button></li>
+    <li><button class="nav-btn" data-page="tools" onclick="showPage('tools')">الأدوات</button></li>
+    <li id="layerBadge" class="nav-badge" style="display:none"></li>
+  </ul>
+</nav>
+
+<!-- ==================== HOME PAGE ==================== -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        منصة أدوات GIS المتكاملة
+      </div>
+      <h1>حلول مكانية <span class="gradient-text">ذكية</span><br>لبياناتك الجغرافية</h1>
+      <p>ارفع قاعدة بياناتك — File Geodatabase, Shapefile, GeoPackage — وافحصها مباشرة</p>
+      <div class="hero-btns">
+        <button class="btn-primary" onclick="showPage('viewer')">ارفع بياناتك ←</button>
+        <button class="btn-secondary" onclick="showPage('tools')">استكشف الأدوات</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tools Preview -->
+  <div class="container" style="padding-bottom:80px">
+    <div class="section-header">
+      <div class="section-tag">الأدوات</div>
+      <h2 class="section-title">أدوات مبنية لتسهيل شغلك</h2>
+      <p class="section-desc">تدعم File Geodatabase (.gdb) — مضلعات، خطوط، ونقاط</p>
+    </div>
+    <div class="tools-grid" id="homeToolsGrid"></div>
+  </div>
+</div>
+
+<!-- ==================== VIEWER PAGE ==================== -->
+<div id="page-viewer" class="page">
+  <div class="container">
+    <h2 style="font-family:'Tajawal'; font-size:24px; font-weight:800; margin-bottom:8px">عارض الخرائط</h2>
+    <p style="color:var(--text2); margin-bottom:24px">ارفع قاعدة بياناتك وشوف طبقاتك على الخريطة</p>
+
+    <!-- Upload Zone -->
+    <div id="uploadZone" class="upload-zone" onclick="document.getElementById('fileInput').click()">
+      <div class="icon">☁️</div>
+      <h3>اسحب ملفاتك هنا أو اضغط للرفع</h3>
+      <p>ارفع ملف .gdb (ZIP) أو .shp, .gpkg, .geojson مباشرة</p>
+      <div class="formats">
+        <span class="format-chip">.gdb (ZIP)</span>
+        <span class="format-chip">.shp (ZIP)</span>
+        <span class="format-chip">.gpkg</span>
+        <span class="format-chip">.geojson</span>
+        <span class="format-chip">.kml</span>
+      </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px dashed rgba(255,255,255,0.1)">
+        <span style="color:var(--accent);font-size:13px;cursor:pointer" onclick="event.stopPropagation(); document.getElementById('folderInput').click()">
+          📁 أو اختر مجلد .gdb مباشرة (بدون ضغط)
+        </span>
+      </div>
+      <input type="file" id="fileInput" accept=".zip,.gpkg,.geojson,.json,.kml,.shp" style="display:none" onchange="handleUpload(this.files[0])">
+      <input type="file" id="folderInput" webkitdirectory directory style="display:none" onchange="handleFolderUpload(this.files)">
+    </div>
+
+    <!-- Upload Progress -->
+    <div id="uploadProgress" style="display:none">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span class="spinner"></span>
+        <span id="uploadStatus" style="color:var(--text2);font-size:14px">جاري رفع وقراءة الملف...</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+
+    <!-- Layers Panel -->
+    <div id="layersPanel" class="layers-panel" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0">📑 الطبقات <span id="layerCount" style="color:var(--accent);font-size:14px"></span></h3>
+        <button class="btn-sm" onclick="resetUpload()" style="font-size:12px;padding:6px 14px">🔄 رفع بيانات جديدة</button>
+      </div>
+      <div id="layersList"></div>
+    </div>
+
+    <!-- Map Toolbar -->
+    <div id="mapToolbar" class="map-toolbar" style="display:none">
+      <button class="btn-sm" onclick="toggleAttributeTable()">📋 جدول البيانات</button>
+      <button class="btn-sm" onclick="zoomToLayer()">🔍 تكبير على الطبقة</button>
+      <button class="btn-sm" onclick="exportGeoJSON()">⬇️ تحميل GeoJSON</button>
+      <button class="btn-sm" onclick="showPage('tools')">🔧 فتح الأدوات</button>
+    </div>
+
+    <!-- Map -->
+    <div id="mapContainer" style="display:none">
+      <div id="map"></div>
+    </div>
+
+    <!-- Attribute Table -->
+    <div id="attrTableContainer" style="display:none;margin-top:16px">
+      <h3 style="font-family:'Tajawal';font-size:16px;font-weight:700;margin-bottom:12px">جدول البيانات الوصفية</h3>
+      <div class="table-wrap" id="attrTable"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TOOLS PAGE ==================== -->
+<div id="page-tools" class="page">
+  <div class="container">
+    <!-- Tools Grid -->
+    <div id="toolsGridView">
+      <h2 style="font-family:'Tajawal'; font-size:24px; font-weight:800; margin-bottom:8px">الأدوات</h2>
+      <p id="toolsDesc" style="color:var(--text2); margin-bottom:30px"></p>
+      <div class="tools-grid" id="toolsGrid"></div>
+    </div>
+
+    <!-- Active Tool -->
+    <div id="activeToolView" style="display:none">
+      <button class="btn-sm" onclick="closeActiveTool()" style="margin-bottom:20px">← رجوع للأدوات</button>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:30px">
+        <h2 id="activeToolTitle" style="font-family:'Tajawal';font-size:22px;font-weight:800;margin-bottom:6px"></h2>
+        <p id="activeToolDesc" style="color:var(--text2);margin-bottom:24px;font-size:14px"></p>
+
+        <!-- Layer Selector for tools -->
+        <div id="toolLayerSelector" style="margin-bottom:20px">
+          <label style="font-size:14px;font-weight:600;margin-bottom:8px;display:block">اختر الطبقة:</label>
+          <select id="toolLayerSelect" style="
+            background:var(--card2);border:1px solid var(--border);color:var(--text);
+            padding:10px 16px;border-radius:10px;font-family:inherit;font-size:14px;
+            width:100%;max-width:400px;cursor:pointer;
+          " onchange="onToolLayerChange()"></select>
+        </div>
+
+        <div id="toolContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== STATE ====================
+let state = {
+  filepath: null,
+  layers: [],
+  activeLayer: null,
+  activeLayerGeoJSON: null,
+  map: null,
+  geoJsonLayer: null,
+  activeTool: null,
+};
+
+const TOOLS = [
+  { id:'errors', icon:'🔍', name:'فحص ومعالجة الأخطاء', desc:'كشف وإصلاح Gaps, Overlaps, Dangles والأخطاء في Attributes', tag:'الأكثر استخداماً', color:'#00e5a0' },
+  { id:'topology', icon:'📐', name:'فحص الطوبولوجي', desc:'فحص شامل لقواعد الطوبولوجي مع تصنيف الأخطاء', tag:'متقدم', color:'#00b4d8' },
+  { id:'stats', icon:'📊', name:'تلخيص البيانات', desc:'إحصائيات سريعة — مساحات، أطوال، عدد العناصر، التوزيع', tag:'تحليل', color:'#8b5cf6' },
+  { id:'convert', icon:'🔄', name:'تحويل الصيغ', desc:'تحويل بين GeoJSON, Shapefile, GeoPackage, CSV, KML', tag:'تحويل', color:'#f59e0b' },
+  { id:'areas', icon:'📏', name:'حساب المساحات والأطوال', desc:'حساب دقيق مع إحصائيات تفصيلية', tag:'حسابات', color:'#ec4899' },
+  { id:'table', icon:'📋', name:'جدول البيانات', desc:'عرض وتصفح كل البيانات الوصفية للطبقة', tag:'بيانات', color:'#f97316' },
+  { id:'cad', icon:'📐', name:'تحويل CAD → GIS', desc:'تحويل ملفات DWG/DXF إلى GeoPackage مع تنظيف تلقائي', tag:'تحويل', color:'#06b6d4' },
+];
+
+// ==================== NAVIGATION ====================
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.nav-btn[data-page="${page}"]`)?.classList.add('active');
+  
+  if (page === 'viewer' && state.map) {
+    setTimeout(() => state.map.invalidateSize(), 100);
+  }
+}
+
+function notify(msg, type='success') {
+  const el = document.getElementById('notification');
+  el.textContent = msg;
+  el.className = `notification ${type}`;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+
+// ==================== FILE UPLOAD ====================
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  handleUpload(e.dataTransfer.files[0]);
+});
+
+async function handleUpload(file) {
+  if (!file) return;
+
+  // Show progress
+  document.getElementById('uploadProgress').style.display = 'block';
+  document.getElementById('uploadZone').style.display = 'none';
+  
+  const progressFill = document.getElementById('progressFill');
+  const statusEl = document.getElementById('uploadStatus');
+
+  // Animate progress
+  let progress = 0;
+  const progressInterval = setInterval(() => {
+    progress = Math.min(progress + Math.random() * 15, 90);
+    progressFill.style.width = progress + '%';
+  }, 300);
+
+  statusEl.textContent = `جاري رفع "${file.name}"...`;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    clearInterval(progressInterval);
+    progressFill.style.width = '100%';
+
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    statusEl.textContent = `تم قراءة ${data.total_layers} طبقة بنجاح!`;
+    
+    state.filepath = data.filepath;
+    state.layers = data.layers;
+
+    // Update UI
+    setTimeout(() => {
+      document.getElementById('uploadProgress').style.display = 'none';
+      renderLayers();
+      document.getElementById('layerBadge').style.display = 'inline';
+      document.getElementById('layerBadge').textContent = `${data.total_layers} طبقة`;
+      notify(`تم تحميل ${data.total_layers} طبقة بنجاح`);
+    }, 500);
+
+  } catch (err) {
+    clearInterval(progressInterval);
+    document.getElementById('uploadProgress').style.display = 'none';
+    document.getElementById('uploadZone').style.display = 'block';
+    notify(err.message || 'خطأ في رفع الملف', 'error');
+  }
+}
+
+// Handle folder upload (.gdb directory)
+async function handleFolderUpload(files) {
+  if (!files || files.length === 0) return;
+
+  // Check if it's a .gdb folder
+  const firstPath = files[0].webkitRelativePath || '';
+  const folderName = firstPath.split('/')[0];
+  
+  if (!folderName.toLowerCase().endsWith('.gdb')) {
+    notify('اختر مجلد .gdb فقط', 'error');
+    return;
+  }
+
+  // Show progress
+  document.getElementById('uploadProgress').style.display = 'block';
+  document.getElementById('uploadZone').style.display = 'none';
+  const progressFill = document.getElementById('progressFill');
+  const statusEl = document.getElementById('uploadStatus');
+  statusEl.textContent = `جاري ضغط مجلد "${folderName}" ورفعه...`;
+
+  let progress = 0;
+  const progressInterval = setInterval(() => {
+    progress = Math.min(progress + Math.random() * 10, 85);
+    progressFill.style.width = progress + '%';
+  }, 300);
+
+  try {
+    // Create ZIP from folder files using JSZip
+    // Load JSZip dynamically
+    if (!window.JSZip) {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      document.head.appendChild(script);
+      await new Promise((resolve, reject) => {
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Failed to load JSZip'));
+      });
+    }
+
+    const zip = new JSZip();
+    
+    for (const file of files) {
+      const path = file.webkitRelativePath;
+      const data = await file.arrayBuffer();
+      zip.file(path, data);
+    }
+
+    statusEl.textContent = 'جاري الضغط والرفع...';
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const zipFile = new File([blob], folderName + '.zip', { type: 'application/zip' });
+
+    // Upload the zip
+    const formData = new FormData();
+    formData.append('file', zipFile);
+
+    const response = await fetch('/api/upload', { method: 'POST', body: formData });
+    clearInterval(progressInterval);
+    progressFill.style.width = '100%';
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+
+    statusEl.textContent = `تم قراءة ${data.total_layers} طبقة بنجاح!`;
+    state.filepath = data.filepath;
+    state.layers = data.layers;
+
+    setTimeout(() => {
+      document.getElementById('uploadProgress').style.display = 'none';
+      renderLayers();
+      document.getElementById('layerBadge').style.display = 'inline';
+      document.getElementById('layerBadge').textContent = `${data.total_layers} طبقة`;
+      notify(`تم تحميل ${data.total_layers} طبقة بنجاح`);
+    }, 500);
+
+  } catch (err) {
+    clearInterval(progressInterval);
+    document.getElementById('uploadProgress').style.display = 'none';
+    document.getElementById('uploadZone').style.display = 'block';
+    notify(err.message || 'خطأ في رفع المجلد', 'error');
+  }
+}
+
+// Reset upload - allow uploading new data
+function resetUpload() {
+  // Clear state
+  state.filepath = null;
+  state.layers = [];
+  state.activeLayer = null;
+  state.activeLayerGeoJSON = null;
+
+  // Clear map
+  if (state.geoJsonLayer) {
+    state.map.removeLayer(state.geoJsonLayer);
+    state.geoJsonLayer = null;
+  }
+
+  // Reset UI
+  document.getElementById('uploadZone').style.display = 'block';
+  document.getElementById('layersPanel').style.display = 'none';
+  document.getElementById('mapToolbar').style.display = 'none';
+  document.getElementById('mapContainer').style.display = 'none';
+  document.getElementById('attrTableContainer').style.display = 'none';
+  document.getElementById('layerBadge').style.display = 'none';
+
+  // Reset file inputs
+  document.getElementById('fileInput').value = '';
+  document.getElementById('folderInput').value = '';
+
+  notify('جاهز لرفع بيانات جديدة');
+}
+
+// ==================== LAYERS ====================
+function renderLayers() {
+  const panel = document.getElementById('layersPanel');
+  const list = document.getElementById('layersList');
+  panel.style.display = 'block';
+  document.getElementById('layerCount').textContent = `(${state.layers.length})`;
+
+  list.innerHTML = state.layers.map((layer, i) => {
+    const geomType = layer.geometry_type[0] || 'Unknown';
+    const iconClass = geomType.includes('Polygon') ? 'polygon' : geomType.includes('Line') ? 'line' : 'point';
+    const iconEmoji = geomType.includes('Polygon') ? '⬜' : geomType.includes('Line') ? '📏' : '📍';
+    const geomLabel = geomType.includes('Polygon') ? 'مضلع' : geomType.includes('Line') ? 'خط' : geomType.includes('Point') ? 'نقطة' : geomType;
+
+    return `
+      <div class="layer-item ${state.activeLayer === layer.name ? 'active' : ''}" onclick="loadLayer('${layer.name}')">
+        <div class="layer-icon ${iconClass}">${iconEmoji}</div>
+        <div style="flex:1">
+          <div class="layer-name">${layer.name}</div>
+          <div class="layer-meta">${layer.feature_count} عنصر · ${geomLabel} · ${layer.fields.length} حقل</div>
+        </div>
+        ${layer.error ? '<span style="color:var(--danger);font-size:12px">❌ خطأ</span>' : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadLayer(layerName) {
+  state.activeLayer = layerName;
+  renderLayers();
+
+  // Show map
+  document.getElementById('mapContainer').style.display = 'block';
+  document.getElementById('mapToolbar').style.display = 'flex';
+  document.getElementById('attrTableContainer').style.display = 'none';
+
+  // Init map if needed
+  if (!state.map) {
+    state.map = L.map('map', {
+      zoomControl: true,
+      attributionControl: false,
+    }).setView([24.7, 46.7], 10);
+
+    // Dark basemap
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+    }).addTo(state.map);
+  }
+
+  // Fetch layer data
+  notify('جاري تحميل الطبقة...');
+
+  try {
+    const response = await fetch('/api/layers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filepath: state.filepath, layer: layerName })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+
+    state.activeLayerGeoJSON = data.geojson;
+
+    // Clear existing layer
+    if (state.geoJsonLayer) {
+      state.map.removeLayer(state.geoJsonLayer);
+    }
+
+    // Color palette
+    const colors = ['#00e5a0','#00b4d8','#f59e0b','#8b5cf6','#ec4899','#f97316','#3b82f6','#ef4444'];
+
+    // Add GeoJSON
+    state.geoJsonLayer = L.geoJSON(data.geojson, {
+      style: (feature) => {
+        const idx = (feature.properties.id || Math.random() * 8) % 8;
+        return {
+          color: colors[Math.floor(idx) % colors.length],
+          weight: 2,
+          fillOpacity: 0.25,
+          fillColor: colors[Math.floor(idx) % colors.length],
+        };
+      },
+      pointToLayer: (feature, latlng) => {
+        return L.circleMarker(latlng, {
+          radius: 7,
+          fillColor: '#00e5a0',
+          color: '#fff',
+          weight: 2,
+          fillOpacity: 0.8
+        });
+      },
+      onEachFeature: (feature, layer) => {
+        const props = feature.properties;
+        let popup = '<div style="direction:rtl;font-family:Tajawal;font-size:13px;min-width:150px">';
+        for (const [key, val] of Object.entries(props)) {
+          popup += `<div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:2px">
+            <span style="color:#888">${key}:</span>
+            <span style="font-weight:600">${val ?? '—'}</span>
+          </div>`;
+        }
+        popup += '</div>';
+        layer.bindPopup(popup);
+      }
+    }).addTo(state.map);
+
+    // Zoom to layer
+    state.map.fitBounds(state.geoJsonLayer.getBounds(), { padding: [30, 30] });
+
+    notify(`تم تحميل "${layerName}" — ${data.feature_count} عنصر`);
+
+  } catch (err) {
+    notify(err.message, 'error');
+  }
+}
+
+function zoomToLayer() {
+  if (state.geoJsonLayer) {
+    state.map.fitBounds(state.geoJsonLayer.getBounds(), { padding: [30, 30] });
+  }
+}
+
+function toggleAttributeTable() {
+  const container = document.getElementById('attrTableContainer');
+  if (container.style.display === 'none') {
+    renderAttributeTable();
+    container.style.display = 'block';
+  } else {
+    container.style.display = 'none';
+  }
+}
+
+function renderAttributeTable() {
+  if (!state.activeLayerGeoJSON) return;
+  const features = state.activeLayerGeoJSON.features;
+  if (features.length === 0) return;
+
+  const fields = Object.keys(features[0].properties);
+  let html = '<table><thead><tr>';
+  fields.forEach(f => html += `<th>${f}</th>`);
+  html += '</tr></thead><tbody>';
+  features.forEach(feat => {
+    html += '<tr>';
+    fields.forEach(f => html += `<td>${feat.properties[f] ?? '—'}</td>`);
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('attrTable').innerHTML = html;
+}
+
+function exportGeoJSON() {
+  if (!state.activeLayerGeoJSON) return;
+  const blob = new Blob([JSON.stringify(state.activeLayerGeoJSON, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${state.activeLayer || 'layer'}.geojson`;
+  a.click();
+  URL.revokeObjectURL(url);
+  notify('تم تحميل الملف');
+}
+
+// ==================== TOOLS ====================
+function renderToolsGrid(containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = TOOLS.map(tool => `
+    <div class="tool-card" onclick="openTool('${tool.id}')">
+      <div class="icon" style="background:${tool.color}15;border:1px solid ${tool.color}22">${tool.icon}</div>
+      <h3>${tool.name}</h3>
+      <p>${tool.desc}</p>
+      <span class="tool-tag" style="background:${tool.color}12;color:${tool.color}">${tool.tag}</span>
+    </div>
+  `).join('');
+}
+
+function openTool(toolId) {
+  if (!state.filepath) {
+    notify('ارفع قاعدة بيانات أولاً من عارض الخرائط', 'error');
+    showPage('viewer');
+    return;
+  }
+
+  showPage('tools');
+  state.activeTool = toolId;
+  const tool = TOOLS.find(t => t.id === toolId);
+
+  document.getElementById('toolsGridView').style.display = 'none';
+  document.getElementById('activeToolView').style.display = 'block';
+  document.getElementById('activeToolTitle').textContent = `${tool.icon} ${tool.name}`;
+  document.getElementById('activeToolDesc').textContent = tool.desc;
+
+  // Populate layer selector
+  const select = document.getElementById('toolLayerSelect');
+  select.innerHTML = state.layers.map(l => 
+    `<option value="${l.name}" ${l.name === state.activeLayer ? 'selected' : ''}>${l.name} (${l.feature_count} عنصر)</option>`
+  ).join('');
+
+  renderToolContent();
+}
+
+function closeActiveTool() {
+  state.activeTool = null;
+  document.getElementById('toolsGridView').style.display = 'block';
+  document.getElementById('activeToolView').style.display = 'none';
+}
+
+function onToolLayerChange() {
+  renderToolContent();
+}
+
+function getSelectedToolLayer() {
+  return document.getElementById('toolLayerSelect').value;
+}
+
+function renderToolContent() {
+  const content = document.getElementById('toolContent');
+  const toolId = state.activeTool;
+
+  if (toolId === 'errors') {
+    content.innerHTML = `
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px">
+        <button class="btn-tool active" id="chk-gaps" onclick="this.classList.toggle('active')">Gaps</button>
+        <button class="btn-tool active" id="chk-overlaps" onclick="this.classList.toggle('active')">Overlaps</button>
+        <button class="btn-tool active" id="chk-dangles" onclick="this.classList.toggle('active')">Dangles</button>
+        <button class="btn-tool active" id="chk-duplicates" onclick="this.classList.toggle('active')">Duplicates</button>
+        <button class="btn-tool active" id="chk-attributes" onclick="this.classList.toggle('active')">Attributes</button>
+        <button class="btn-tool" id="chk-self_intersect" onclick="this.classList.toggle('active');toggleSelfIntersectRef()">Self-Intersect</button>
+        <button class="btn-tool" id="chk-spikes" onclick="this.classList.toggle('active')">Spikes</button>
+        <button class="btn-tool" id="chk-spelling" onclick="this.classList.toggle('active')">Spelling</button>
+      </div>
+      <div id="selfIntersectRefDiv" style="margin-bottom:16px;display:none">
+        <label style="font-size:13px;color:var(--text2)">اختر الطبقة المرجعية (بوليجون):</label>
+        <select id="selfIntersectRefLayer" style="
+          background:var(--card2);border:1px solid var(--border);color:var(--text);
+          padding:8px 12px;border-radius:8px;font-family:inherit;width:100%;margin-top:6px;
+        ">
+          <option value="">-- بدون (فحص ذاتي فقط) --</option>
+        </select>
+      </div>
+      <div id="spikeAngleDiv" style="margin-bottom:16px;display:none">
+        <label style="font-size:13px;color:var(--text2)">Spike Threshold (degrees):</label>
+        <input type="number" id="spikeAngle" value="15" min="1" max="90" style="
+          background:var(--card2);border:1px solid var(--border);color:var(--text);
+          padding:8px 12px;border-radius:8px;font-family:inherit;width:80px;margin-right:8px;
+        ">
+      </div>
+      <button class="btn-primary" onclick="runErrorCheck()">Run Check</button>
+      <div id="errorResults"></div>
+    `;
+    // Toggle spike angle input
+    document.getElementById('chk-spikes').addEventListener('click', () => {
+      document.getElementById('spikeAngleDiv').style.display = 
+        document.getElementById('chk-spikes').classList.contains('active') ? 'block' : 'none';
+    });
+  } else if (toolId === 'stats') {
+    content.innerHTML = `
+      <button class="btn-primary" onclick="runStats()">عرض الإحصائيات</button>
+      <div id="statsResults"></div>
+    `;
+  } else if (toolId === 'convert') {
+    content.innerHTML = `
+      <p style="color:var(--text2);margin-bottom:16px;font-size:14px">اختر الصيغة المطلوبة:</p>
+      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+        <button class="btn-tool active" id="fmt-geojson" onclick="selectFormat('geojson')">GeoJSON</button>
+        <button class="btn-tool" id="fmt-shp" onclick="selectFormat('shp')">Shapefile</button>
+        <button class="btn-tool" id="fmt-gpkg" onclick="selectFormat('gpkg')">GeoPackage</button>
+        <button class="btn-tool" id="fmt-csv" onclick="selectFormat('csv')">CSV</button>
+        <button class="btn-tool" id="fmt-kml" onclick="selectFormat('kml')">KML</button>
+      </div>
+      <button class="btn-primary" onclick="runConvert()">تحويل وتحميل ⬇️</button>
+    `;
+    window._selectedFormat = 'geojson';
+  } else if (toolId === 'areas') {
+    content.innerHTML = `
+      <button class="btn-primary" onclick="runAreas()">حساب المساحات والأطوال</button>
+      <div id="areasResults"></div>
+    `;
+  } else if (toolId === 'table') {
+    content.innerHTML = `
+      <button class="btn-primary" onclick="runTable()">عرض الجدول</button>
+      <div id="tableResults" style="margin-top:20px"></div>
+    `;
+  } else if (toolId === 'topology') {
+    content.innerHTML = `
+      <button class="btn-primary" onclick="runTopology()">ابدأ فحص الطوبولوجي</button>
+      <div id="topoResults"></div>
+    `;
+  } else if (toolId === 'cad') {
+    // Hide layer selector for CAD tool
+    document.getElementById('toolLayerSelector').style.display = 'none';
+    content.innerHTML = `
+      <div class="upload-zone" id="cadUploadZone" style="padding:40px 20px;margin-bottom:16px;cursor:pointer"
+        onclick="document.getElementById('cadFileInput').click()">
+        <div class="icon" style="font-size:40px;margin-bottom:10px;opacity:0.5">📐</div>
+        <h3 style="font-family:'Tajawal';font-size:16px;font-weight:700;margin-bottom:6px">ارفع ملف CAD هنا</h3>
+        <p style="color:var(--text2);font-size:14px;margin-bottom:12px">يدعم DXF — ارفع الملف مباشرة</p>
+        <div class="formats">
+          <span class="format-chip">.dxf</span>
+        </div>
+        <input type="file" id="cadFileInput" accept=".dxf,.dwg" style="display:none" onchange="handleCADUpload(this.files[0])">
+      </div>
+      <div id="cadResults"></div>
+    `;
+  }
+}
+
+// ===== ERROR CHECK =====
+function toggleSelfIntersectRef() {
+  const div = document.getElementById('selfIntersectRefDiv');
+  const active = document.getElementById('chk-self_intersect').classList.contains('active');
+  div.style.display = active ? 'block' : 'none';
+  
+  if (active && state.layers) {
+    const select = document.getElementById('selfIntersectRefLayer');
+    const currentLayer = getSelectedToolLayer();
+    select.innerHTML = '<option value="">-- بدون (فحص ذاتي فقط) --</option>';
+    state.layers.forEach(l => {
+      if (l.name !== currentLayer) {
+        select.innerHTML += `<option value="${l.name}">${l.name} (${l.feature_count} عنصر)</option>`;
+      }
+    });
+  }
+}
+
+async function runErrorCheck() {
+  const layer = getSelectedToolLayer();
+  const checks = {
+    gaps: document.getElementById('chk-gaps').classList.contains('active'),
+    overlaps: document.getElementById('chk-overlaps').classList.contains('active'),
+    dangles: document.getElementById('chk-dangles').classList.contains('active'),
+    duplicates: document.getElementById('chk-duplicates').classList.contains('active'),
+    attributes: document.getElementById('chk-attributes').classList.contains('active'),
+    self_intersect: document.getElementById('chk-self_intersect').classList.contains('active'),
+    spikes: document.getElementById('chk-spikes').classList.contains('active'),
+    spelling: document.getElementById('chk-spelling').classList.contains('active'),
+    spike_angle: parseFloat(document.getElementById('spikeAngle')?.value || 15),
+    self_intersect_ref: document.getElementById('selfIntersectRefLayer')?.value || '',
+  };
+
+  document.getElementById('errorResults').innerHTML = '<div style="margin-top:20px"><span class="spinner"></span> جاري الفحص...</div>';
+
+  try {
+    // Load layer GeoJSON for map display
+    if (!state.activeLayerGeoJSON || state.activeLayer !== layer) {
+      try {
+        const layerRes = await fetch('/api/layers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filepath: state.filepath, layer })
+        });
+        const layerData = await layerRes.json();
+        if (layerData.geojson) {
+          state.activeLayerGeoJSON = layerData.geojson;
+          state.activeLayer = layer;
+        }
+      } catch(e) { console.log('Could not load layer for map'); }
+    }
+
+    const res = await fetch('/api/check-errors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filepath: state.filepath, layer, checks })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    let html = '<div class="result-cards">';
+    const types = ['Overlap','Gap','Dangle','Duplicate','Attribute','Self-Intersect','Spike','Spelling'];
+    types.forEach(t => {
+      const count = data.summary[t] || 0;
+      html += `<div class="result-card">
+        <div class="num" style="color:${count > 0 ? '#f59e0b' : 'var(--accent)'}">${count}</div>
+        <div class="label">${t}</div>
+      </div>`;
+    });
+    html += `<div class="result-card">
+      <div class="num" style="color:${data.total > 0 ? '#ef4444' : 'var(--accent)'}">${data.total}</div>
+      <div class="label">المجموع</div>
+    </div></div>`;
+
+    if (data.errors.length > 0) {
+      // Error Map
+      html += `<div id="errorMapContainer" style="margin-top:16px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.1)">
+        <div style="padding:10px 16px;background:rgba(0,0,0,0.3);font-weight:700;font-size:14px">🗺️ خريطة الأخطاء <span style="color:var(--text2);font-weight:400;font-size:12px">(اضغط على الصف لعرض الخطأ)</span></div>
+        <div id="errorMap" style="height:350px"></div>
+      </div>`;
+
+      html += '<div class="table-wrap" style="margin-top:16px"><table><thead><tr><th>النوع</th><th>الخطورة</th><th>الوصف</th><th>📍</th></tr></thead><tbody>';
+      data.errors.forEach((err, i) => {
+        const sevClass = err.severity === 'High' ? 'high' : err.severity === 'Medium' ? 'medium' : 'low';
+        const hasLoc = err.location && err.location.lat;
+        const clickAttr = hasLoc ? `style="cursor:pointer" onclick="zoomToError(${i})"` : '';
+        const locIcon = hasLoc ? '📍' : '—';
+        html += `<tr ${clickAttr}><td style="font-weight:600;color:var(--text)">${err.type}</td>
+          <td><span class="severity ${sevClass}">${err.severity}</span></td>
+          <td>${err.desc}</td>
+          <td style="text-align:center">${locIcon}</td></tr>`;
+      });
+      html += '</tbody></table></div>';
+    }
+
+    // Save for PDF export
+    window._lastErrorData = data;
+
+    // Add PDF export button
+    html += `<div style="margin-top:16px">
+      <button class="btn-primary" onclick="exportErrorPDF()" style="font-size:14px;padding:10px 24px">
+        📄 تصدير التقرير PDF
+      </button>
+    </div>`;
+
+    document.getElementById('errorResults').innerHTML = html;
+    notify(`تم الفحص — ${data.total} خطأ`);
+
+    // Initialize error map if errors have locations
+    const errorsWithLoc = data.errors.filter(e => e.location && e.location.lat);
+    if (errorsWithLoc.length > 0) {
+      setTimeout(() => initErrorMap(data.errors), 300);
+    }
+
+  } catch (err) {
+    document.getElementById('errorResults').innerHTML = `<p style="color:var(--danger);margin-top:16px">${err.message}</p>`;
+  }
+}
+
+// ===== ERROR MAP =====
+let errorMap = null;
+let errorMarkers = [];
+let errorLayers = [];
+
+function initErrorMap(errors) {
+  const mapEl = document.getElementById('errorMap');
+  if (!mapEl) return;
+
+  if (errorMap) { errorMap.remove(); }
+  errorMap = L.map('errorMap').setView([24.7, 46.7], 5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(errorMap);
+
+  errorMarkers = [];
+  errorLayers = [];
+  const bounds = L.latLngBounds();
+
+  // Color map for error types
+  const colors = {
+    'Overlap': '#ef4444',
+    'Gap': '#f59e0b',
+    'Dangle': '#3b82f6',
+    'Duplicate': '#8b5cf6',
+    'Attribute': '#f97316',
+    'Self-Intersect': '#ec4899',
+    'Spike': '#06b6d4',
+    'Spelling': '#84cc16'
+  };
+
+  errors.forEach((err, i) => {
+    if (!err.location || !err.location.lat) {
+      errorMarkers.push(null);
+      errorLayers.push(null);
+      return;
+    }
+    
+    const color = colors[err.type] || '#ef4444';
+    const latlng = [err.location.lat, err.location.lng];
+    bounds.extend(latlng);
+
+    // Add marker
+    const marker = L.circleMarker(latlng, {
+      radius: 8, fillColor: color, color: '#fff',
+      weight: 2, opacity: 1, fillOpacity: 0.8
+    }).addTo(errorMap);
+    marker.bindPopup(`<b>${err.type}</b><br>${err.desc}`);
+    errorMarkers.push(marker);
+
+    // Add geometry if available (overlap/gap areas)
+    if (err.location.geojson) {
+      try {
+        const layer = L.geoJSON(err.location.geojson, {
+          style: { color: color, fillColor: color, fillOpacity: 0.3, weight: 2 }
+        }).addTo(errorMap);
+        errorLayers.push(layer);
+      } catch(e) { errorLayers.push(null); }
+    } else {
+      errorLayers.push(null);
+    }
+  });
+
+  // Add layer data if available
+  if (state.activeLayerGeoJSON) {
+    L.geoJSON(state.activeLayerGeoJSON, {
+      style: { color: '#00e5a0', fillColor: '#00e5a0', fillOpacity: 0.05, weight: 2, opacity: 0.6 },
+      pointToLayer: function(feature, latlng) {
+        return L.circleMarker(latlng, { radius: 4, fillColor: '#00e5a0', color: '#00e5a0', weight: 1, fillOpacity: 0.5 });
+      },
+      onEachFeature: function(feature, layer) {
+        if (feature.properties) {
+          const props = Object.entries(feature.properties).map(([k,v]) => `<b>${k}:</b> ${v}`).join('<br>');
+          layer.bindPopup(props);
+        }
+      }
+    }).addTo(errorMap);
+  }
+
+  if (bounds.isValid()) {
+    errorMap.fitBounds(bounds, { padding: [30, 30] });
+  } else if (state.activeLayerGeoJSON) {
+    // Fit to layer bounds if no error locations
+    try {
+      const layerGroup = L.geoJSON(state.activeLayerGeoJSON);
+      errorMap.fitBounds(layerGroup.getBounds(), { padding: [30, 30] });
+    } catch(e) {}
+  }
+
+  // Add legend
+  const legend = L.control({ position: 'bottomleft' });
+  legend.onAdd = function() {
+    const div = L.DomUtil.create('div', '');
+    div.style.cssText = 'background:rgba(10,14,26,0.9);padding:8px 12px;border-radius:8px;font-size:11px;color:#fff';
+    const types = [...new Set(errors.filter(e=>e.location).map(e=>e.type))];
+    div.innerHTML = types.map(t => 
+      `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colors[t]||'#ef4444'};margin-left:4px"></span> ${t}`
+    ).join('<br>');
+    return div;
+  };
+  legend.addTo(errorMap);
+}
+
+function zoomToError(index) {
+  if (!errorMap) return;
+  const errors = window._lastErrorData?.errors;
+  if (!errors || !errors[index] || !errors[index].location) return;
+
+  const loc = errors[index].location;
+  errorMap.setView([loc.lat, loc.lng], 18);
+
+  // Highlight marker
+  if (errorMarkers[index]) {
+    errorMarkers[index].setRadius(14);
+    errorMarkers[index].openPopup();
+    setTimeout(() => { if(errorMarkers[index]) errorMarkers[index].setRadius(8); }, 2000);
+  }
+
+  // Scroll to map
+  document.getElementById('errorMapContainer')?.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ===== PDF EXPORT =====
+async function exportErrorPDF() {
+  if (!window._lastErrorData) {
+    notify('شغّل الفحص أولاً', 'error');
+    return;
+  }
+  
+  notify('جاري إنشاء التقرير...');
+  
+  try {
+    const layer = getSelectedToolLayer();
+    const res = await fetch('/api/report-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filepath: state.filepath,
+        layer: layer,
+        errors: window._lastErrorData.errors,
+        summary: window._lastErrorData.summary,
+        total: window._lastErrorData.total
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error);
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `report_${layer}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    notify('تم تحميل التقرير PDF');
+
+  } catch (err) {
+    notify(err.message, 'error');
+  }
+}
+
+// ===== STATS =====
+async function runStats() {
+  const layer = getSelectedToolLayer();
+  document.getElementById('statsResults').innerHTML = '<div style="margin-top:20px"><span class="spinner"></span> جاري التحليل...</div>';
+
+  try {
+    const res = await fetch('/api/stats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filepath: state.filepath, layer })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    let html = '<div class="result-cards">';
+    html += `<div class="result-card"><div class="num" style="color:var(--accent)">${data.feature_count}</div><div class="label">عدد العناصر</div></div>`;
+    html += `<div class="result-card"><div class="num" style="color:var(--accent)">${data.geometry_type.join(', ')}</div><div class="label">نوع الهندسة</div></div>`;
+    html += `<div class="result-card"><div class="num" style="color:var(--accent)">${data.fields.length}</div><div class="label">عدد الحقول</div></div>`;
+    html += '</div>';
+
+    // Geometry stats
+    const gs = data.geometry_stats;
+    if (gs && Object.keys(gs).length > 0) {
+      html += '<h4 style="margin:20px 0 12px;font-size:15px">إحصائيات هندسية</h4><div class="result-cards">';
+      if (gs.total_area_sqm !== undefined) {
+        html += `<div class="result-card"><div class="num" style="color:var(--accent);font-size:18px">${gs.total_area_sqm.toLocaleString()}</div><div class="label">إجمالي المساحة (م²)</div></div>`;
+        html += `<div class="result-card"><div class="num" style="color:#00b4d8;font-size:18px">${gs.avg_area_sqm.toLocaleString()}</div><div class="label">متوسط المساحة (م²)</div></div>`;
+        html += `<div class="result-card"><div class="num" style="color:#f59e0b;font-size:18px">${gs.total_perimeter_m.toLocaleString()}</div><div class="label">إجمالي المحيط (م)</div></div>`;
+      }
+      if (gs.total_length_m !== undefined) {
+        html += `<div class="result-card"><div class="num" style="color:var(--accent);font-size:18px">${gs.total_length_m.toLocaleString()}</div><div class="label">إجمالي الطول (م)</div></div>`;
+        html += `<div class="result-card"><div class="num" style="color:#00b4d8;font-size:18px">${gs.avg_length_m.toLocaleString()}</div><div class="label">متوسط الطول (م)</div></div>`;
+      }
+      html += '</div>';
+    }
+
+    // Field stats
+    html += '<h4 style="margin:20px 0 12px;font-size:15px">تفاصيل الحقول</h4>';
+    html += '<div class="table-wrap"><table><thead><tr><th>الحقل</th><th>النوع</th><th>فراغات</th><th>قيم فريدة</th><th>تفاصيل</th></tr></thead><tbody>';
+    data.fields.forEach(f => {
+      let details = '';
+      if (f.min !== undefined) details = `أقل: ${f.min} | أكثر: ${f.max} | متوسط: ${f.mean}`;
+      else if (f.top_values) details = Object.entries(f.top_values).slice(0,3).map(([k,v]) => `${k}(${v})`).join(', ');
+      html += `<tr><td style="font-weight:600;color:var(--text)">${f.name}</td><td>${f.dtype}</td>
+        <td style="color:${f.null_count > 0 ? '#f59e0b' : 'var(--accent)'}">${f.null_count}</td>
+        <td>${f.unique_count}</td><td style="font-size:12px">${details}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+
+    // Category distributions
+    data.fields.filter(f => f.top_values).forEach(f => {
+      const max = Math.max(...Object.values(f.top_values));
+      const colors = ['#00e5a0','#00b4d8','#f59e0b','#8b5cf6','#ec4899'];
+      html += `<h4 style="margin:20px 0 12px;font-size:15px">توزيع: ${f.name}</h4>`;
+      Object.entries(f.top_values).forEach(([cat, count], i) => {
+        const color = colors[i % colors.length];
+        html += `<div class="bar-row">
+          <span class="bar-label">${cat}</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${(count/max)*100}%;background:${color}44;border-right:3px solid ${color}"></div>
+            <span class="bar-val" style="color:${color}">${count}</span>
+          </div>
+        </div>`;
+      });
+    });
+
+    document.getElementById('statsResults').innerHTML = html;
+
+  } catch (err) {
+    document.getElementById('statsResults').innerHTML = `<p style="color:var(--danger);margin-top:16px">${err.message}</p>`;
+  }
+}
+
+// ===== CONVERT =====
+function selectFormat(fmt) {
+  window._selectedFormat = fmt;
+  ['geojson','shp','gpkg','csv','kml'].forEach(f => {
+    document.getElementById(`fmt-${f}`).classList.toggle('active', f === fmt);
+  });
+}
+
+async function runConvert() {
+  const layer = getSelectedToolLayer();
+  const format = window._selectedFormat || 'geojson';
+
+  notify('جاري التحويل...');
+
+  try {
+    const res = await fetch('/api/convert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filepath: state.filepath, layer, format })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error);
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const ext = format === 'shp' ? '_shp.zip' : `.${format}`;
+    a.download = `${layer}${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+    notify(`تم تحويل "${layer}" إلى ${format.toUpperCase()}`);
+
+  } catch (err) {
+    notify(err.message, 'error');
+  }
+}
+
+// ===== AREAS =====
+async function runAreas() {
+  const layer = getSelectedToolLayer();
+  document.getElementById('areasResults').innerHTML = '<div style="margin-top:20px"><span class="spinner"></span> جاري الحساب...</div>';
+
+  try {
+    const res = await fetch('/api/stats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filepath: state.filepath, layer })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const gs = data.geometry_stats;
+    let html = '';
+
+    if (gs.total_area_sqm !== undefined) {
+      html += '<div class="result-cards">';
+      html += `<div class="result-card"><div class="num" style="color:var(--accent);font-size:20px">${gs.total_area_sqm.toLocaleString()}</div><div class="label">إجمالي المساحة (م²)</div></div>`;
+      html += `<div class="result-card"><div class="num" style="color:#00b4d8;font-size:20px">${gs.avg_area_sqm.toLocaleString()}</div><div class="label">متوسط المساحة</div></div>`;
+      html += `<div class="result-card"><div class="num" style="color:#f59e0b;font-size:20px">${gs.min_area_sqm.toLocaleString()}</div><div class="label">أصغر مساحة</div></div>`;
+      html += `<div class="result-card"><div class="num" style="color:#ec4899;font-size:20px">${gs.max_area_sqm.toLocaleString()}</div><div class="label">أكبر مساحة</div></div>`;
+      html += `<div class="result-card"><div class="num" style="color:#8b5cf6;font-size:20px">${gs.total_perimeter_m.toLocaleString()}</div><div class="label">إجمالي المحيط (م)</div></div>`;
+      html += `<div class="result-card"><div class="num" style="color:#f97316;font-size:20px">${gs.avg_perimeter_m.toLocaleString()}</div><div class="label">متوسط المحيط</div></div>`;
+      html += '</div>';
+    } else if (gs.total_length_m !== undefined) {
+      html += '<div class="result-cards">';
+      html += `<div class="result-card"><div class="num" style="color:var(--accent);font-size:20px">${gs.total_length_m.toLocaleString()}</div><div class="label">إجمالي الطول (م)</div></div>`;
+      html += `<div class="result-card"><div class="num" style="color:#00b4d8;font-size:20px">${gs.avg_length_m.toLocaleString()}</div><div class="label">متوسط الطول</div></div>`;
+      html += `<div class="result-card"><div class="num" style="color:#f59e0b;font-size:20px">${gs.min_length_m.toLocaleString()}</div><div class="label">أقصر خط</div></div>`;
+      html += `<div class="result-card"><div class="num" style="color:#ec4899;font-size:20px">${gs.max_length_m.toLocaleString()}</div><div class="label">أطول خط</div></div>`;
+      html += '</div>';
+    } else {
+      html = '<p style="color:var(--text3);padding:20px;text-align:center">هذه الطبقة نقاط — الحساب يعمل مع المضلعات والخطوط</p>';
+    }
+
+    document.getElementById('areasResults').innerHTML = html;
+
+  } catch (err) {
+    document.getElementById('areasResults').innerHTML = `<p style="color:var(--danger);margin-top:16px">${err.message}</p>`;
+  }
+}
+
+// ===== TABLE =====
+async function runTable() {
+  const layer = getSelectedToolLayer();
+  document.getElementById('tableResults').innerHTML = '<span class="spinner"></span> جاري التحميل...';
+
+  try {
+    const res = await fetch('/api/layers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filepath: state.filepath, layer })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const features = data.geojson.features;
+    if (features.length === 0) {
+      document.getElementById('tableResults').innerHTML = '<p style="color:var(--text3)">الطبقة فارغة</p>';
+      return;
+    }
+
+    const fields = Object.keys(features[0].properties);
+    let html = '<div class="table-wrap"><table><thead><tr>';
+    fields.forEach(f => html += `<th>${f}</th>`);
+    html += '</tr></thead><tbody>';
+    features.forEach(feat => {
+      html += '<tr>';
+      fields.forEach(f => html += `<td>${feat.properties[f] ?? '—'}</td>`);
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    document.getElementById('tableResults').innerHTML = html;
+
+  } catch (err) {
+    document.getElementById('tableResults').innerHTML = `<p style="color:var(--danger)">${err.message}</p>`;
+  }
+}
+
+// ===== TOPOLOGY =====
+async function runTopology() {
+  const layer = getSelectedToolLayer();
+  document.getElementById('topoResults').innerHTML = '<div style="margin-top:20px"><span class="spinner"></span> جاري فحص الطوبولوجي...</div>';
+
+  // Use error check API with all checks
+  try {
+    const res = await fetch('/api/check-errors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filepath: state.filepath, layer, checks: { gaps:true, overlaps:true, dangles:true, duplicates:true, attributes:false } })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const rules = [
+      { rule: 'Must Not Overlap', type: 'Overlap' },
+      { rule: 'Must Not Have Gaps', type: 'Gap' },
+      { rule: 'Must Not Have Dangles', type: 'Dangle' },
+      { rule: 'Must Not Have Duplicates', type: 'Duplicate' },
+    ];
+
+    let html = '<div style="margin-top:20px">';
+    rules.forEach(r => {
+      const count = data.summary[r.type] || 0;
+      const passed = count === 0;
+      html += `<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:10px;margin-bottom:4px;background:${passed ? 'transparent' : 'rgba(239,68,68,0.05)'}">
+        <span style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+          background:${passed ? 'var(--accent-dim)' : 'rgba(239,68,68,0.15)'};font-size:16px">
+          ${passed ? '✓' : '✕'}
+        </span>
+        <div style="flex:1"><div style="font-weight:600;font-size:14px;color:${passed ? 'var(--text)' : '#fca5a5'}">${r.rule}</div></div>
+        <span style="padding:4px 14px;border-radius:8px;font-size:13px;font-weight:700;
+          background:${passed ? 'var(--accent-dim)' : 'rgba(239,68,68,0.15)'};
+          color:${passed ? 'var(--accent)' : '#ef4444'}">
+          ${passed ? 'نجح' : count + ' خطأ'}
+        </span>
+      </div>`;
+    });
+    html += '</div>';
+
+    document.getElementById('topoResults').innerHTML = html;
+
+  } catch (err) {
+    document.getElementById('topoResults').innerHTML = `<p style="color:var(--danger);margin-top:16px">${err.message}</p>`;
+  }
+}
+
+// ===== CAD CONVERSION =====
+async function handleCADUpload(file) {
+  if (!file) return;
+
+  document.getElementById('cadResults').innerHTML = '<div style="margin-top:16px"><span class="spinner"></span> جاري تحويل ملف CAD...</div>';
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch('/api/convert-cad', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    // Update state with converted file
+    state.filepath = data.filepath;
+    state.layers = data.layers;
+
+    let html = `<div style="margin-top:16px">
+      <div style="background:var(--accent-dim);border:1px solid rgba(0,229,160,0.2);border-radius:12px;padding:16px;margin-bottom:16px">
+        <p style="color:var(--accent);font-weight:700;font-size:15px">✅ ${data.message}</p>
+        <p style="color:var(--text2);font-size:13px;margin-top:4px">الملف الأصلي: ${data.original_file}</p>
+      </div>`;
+
+    html += '<h4 style="margin-bottom:12px;font-size:15px">الطبقات المحوّلة:</h4>';
+
+    data.layers.forEach(layer => {
+      const geomType = layer.geometry_type[0] || 'Unknown';
+      const iconClass = geomType.includes('Polygon') ? 'polygon' : geomType.includes('Line') ? 'line' : 'point';
+      const iconEmoji = geomType.includes('Polygon') ? '⬜' : geomType.includes('Line') ? '📏' : '📍';
+      
+      html += `<div class="layer-item" onclick="loadConvertedLayer('${layer.name}')" style="cursor:pointer">
+        <div class="layer-icon ${iconClass}">${iconEmoji}</div>
+        <div style="flex:1">
+          <div class="layer-name">${layer.name}</div>
+          <div class="layer-meta">${layer.feature_count} عنصر · ${geomType} · ${layer.fields.length} حقل</div>
+        </div>
+      </div>`;
+    });
+
+    html += `<div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn-primary" onclick="showPage('viewer')" style="font-size:14px;padding:10px 20px">🗺️ عرض على الخريطة</button>
+      <button class="btn-sm" onclick="downloadConverted()">⬇️ تحميل GeoPackage</button>
+    </div></div>`;
+
+    document.getElementById('cadResults').innerHTML = html;
+
+    // Update nav badge
+    document.getElementById('layerBadge').style.display = 'inline';
+    document.getElementById('layerBadge').textContent = `${data.total_layers} طبقة`;
+
+    notify(data.message);
+
+  } catch (err) {
+    document.getElementById('cadResults').innerHTML = `<p style="color:var(--danger);margin-top:16px">${err.message}</p>`;
+    notify(err.message, 'error');
+  }
+}
+
+function loadConvertedLayer(layerName) {
+  state.activeLayer = layerName;
+  showPage('viewer');
+  // Render layers panel
+  renderLayers();
+  loadLayer(layerName);
+}
+
+function downloadConverted() {
+  if (!state.filepath) return;
+  // Use convert API to download as gpkg
+  const layer = state.layers[0]?.name;
+  if (layer) {
+    fetch('/api/convert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filepath: state.filepath, layer, format: 'gpkg' })
+    }).then(res => res.blob()).then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'converted.gpkg'; a.click();
+      URL.revokeObjectURL(url);
+      notify('تم تحميل الملف');
+    });
+  }
+}
+
+// ==================== INIT ====================
+renderToolsGrid('homeToolsGrid');
+renderToolsGrid('toolsGrid');
+
+// Fix: CAD tool doesn't need pre-loaded data
+const origOpenTool = openTool;
+openTool = function(toolId) {
+  if (toolId === 'cad') {
+    showPage('tools');
+    state.activeTool = toolId;
+    const tool = TOOLS.find(t => t.id === toolId);
+    document.getElementById('toolsGridView').style.display = 'none';
+    document.getElementById('activeToolView').style.display = 'block';
+    document.getElementById('activeToolTitle').textContent = `${tool.icon} ${tool.name}`;
+    document.getElementById('activeToolDesc').textContent = tool.desc;
+    document.getElementById('toolLayerSelector').style.display = 'none';
+    renderToolContent();
+    return;
+  }
+  origOpenTool(toolId);
+};
+
+document.getElementById('toolsDesc').textContent = state.filepath
+  ? `بيانات محمّلة — اختر أداة لمعالجتها`
+  : 'حمّل بيانات أولاً من عارض الخرائط، ثم اختر أداة';
+</script>
+</body>
+</html>
